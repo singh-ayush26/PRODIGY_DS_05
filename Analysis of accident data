@@ -1,0 +1,80 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from wordcloud import WordCloud
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, accuracy_score
+from google.colab import files
+
+# Load dataset (replace with your file)
+uploaded = files.upload()
+file_name = list(uploaded.keys())[0]
+df = pd.read_csv(file_name)
+
+
+# Keep only necessary columns (modify depending on dataset)
+df = df[['Accident_ID', 'Road_Condition', 'Weather', 'Time_of_Day', 'Severity', 'Location']].dropna()
+
+# --- Accident Severity Distribution ---
+plt.figure(figsize=(6,4))
+sns.countplot(x='Severity', data=df, order=df['Severity'].value_counts().index, palette="Set2")
+plt.title('Accident Severity Distribution')
+plt.xlabel('Severity Level')
+plt.ylabel('Count')
+plt.tight_layout()
+plt.show()
+
+# --- Road Condition vs Severity ---
+plt.figure(figsize=(10,5))
+sns.countplot(x='Road_Condition', hue='Severity', data=df, order=df['Road_Condition'].value_counts().index, palette="coolwarm")
+plt.title('Severity by Road Condition')
+plt.xlabel('Road Condition')
+plt.ylabel('Accident Count')
+plt.xticks(rotation=30)
+plt.legend(title="Severity")
+plt.tight_layout()
+plt.show()
+
+# --- Weather vs Severity ---
+plt.figure(figsize=(10,5))
+sns.countplot(x='Weather', hue='Severity', data=df, order=df['Weather'].value_counts().index, palette="viridis")
+plt.title('Severity by Weather')
+plt.xlabel('Weather Condition')
+plt.ylabel('Accident Count')
+plt.xticks(rotation=30)
+plt.legend(title="Severity")
+plt.tight_layout()
+plt.show()
+
+# --- Time of Day vs Severity ---
+plt.figure(figsize=(10,5))
+sns.countplot(x='Time_of_Day', hue='Severity', data=df, order=df['Time_of_Day'].value_counts().index, palette="magma")
+plt.title('Severity by Time of Day')
+plt.xlabel('Time of Day')
+plt.ylabel('Accident Count')
+plt.legend(title="Severity")
+plt.tight_layout()
+plt.show()
+
+# --- Accident Hotspots WordCloud ---
+locations_text = ' '.join(df['Location'].astype(str))
+wc = WordCloud(width=800, height=400, background_color='white').generate(locations_text)
+plt.figure(figsize=(12,6))
+plt.imshow(wc, interpolation='bilinear')
+plt.axis('off')
+plt.title("Accident Hotspots (Locations Word Cloud)")
+plt.show()
+
+# --- Predicting Accident Severity ---
+features = pd.get_dummies(df[['Road_Condition', 'Weather', 'Time_of_Day']])
+target = df['Severity']
+
+X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, random_state=42)
+
+model = LogisticRegression(max_iter=500)
+model.fit(X_train, y_train)
+y_pred = model.predict(X_test)
+
+print("Model Accuracy:", accuracy_score(y_test, y_pred))
+print("\nClassification Report:\n", classification_report(y_test, y_pred))
